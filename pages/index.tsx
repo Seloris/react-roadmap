@@ -1,36 +1,30 @@
-import { Card, Grid, Text } from '@nextui-org/react'
+import {
+  Card,
+  Checkbox,
+  Container,
+  Grid,
+  Progress,
+  Spacer,
+  Text,
+} from '@nextui-org/react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import React, { useState } from 'react'
-import { Step } from '../lib/step'
+import { FAKE as FAKE_STEPS, Step } from '../lib/step'
 import styles from '../styles/Home.module.css'
 
 const Home: NextPage = () => {
-  const [steps, setSteps] = useState<Step[]>([
-    {
-      key: '1',
-      title: 'Step 1',
-      descr: 'Step 1 descr',
-      subSteps: [
-        { key: '1-1', title: 'Step 1.1', descr: 'descr' },
-        { key: '1-2', title: 'Step 1.2', descr: 'descr' },
-        { key: '1-3', title: 'Step 1.3', descr: 'descr' },
-        { key: '1-4', title: 'Step 1.4', descr: 'descr' },
-        { key: '1-5', title: 'Step 1.5', descr: 'descr' },
-        { key: '1-6', title: 'Step 1.6', descr: 'descr' },
-      ],
-    },
-    {
-      key: '2',
-      title: 'Step 2',
-      descr: 'Step 2 descr',
-      subSteps: [
-        { key: '2-1', title: 'Step 2.1', descr: 'Step 1.1 descr' },
-        { key: '2-2', title: 'Step 2.2', descr: 'Step 1.1 descr' },
-      ],
-    },
-    { key: '3', title: 'Step 3', descr: 'Step 1 descr', subSteps: [] },
-  ])
+  const [steps, setSteps] = useState<Step[]>(FAKE_STEPS)
+
+  const stepChecked = (
+    mainIdx: number,
+    childrenIdx: number,
+    checked: boolean
+  ) => {
+    const newArr = [...steps]
+    newArr[mainIdx].children![childrenIdx].checked = checked
+    setSteps(newArr)
+  }
 
   return (
     <div className={styles.container}>
@@ -39,8 +33,12 @@ const Home: NextPage = () => {
       </Head>
       <header>React Roadmap</header>
       <main className={styles.main}>
-        {steps.map((step) => (
-          <StepPart key={step.key} step={step}></StepPart>
+        {steps.map((step, i) => (
+          <StepPart
+            key={step.key}
+            step={step}
+            onStepChecked={(idx, checked) => stepChecked(i, idx, checked)}
+          ></StepPart>
         ))}
       </main>
     </div>
@@ -49,23 +47,42 @@ const Home: NextPage = () => {
 
 interface StepProps {
   step: Step
+  onStepChecked: (idx: number, checked: boolean) => void
 }
 
 const StepPart = (props: StepProps) => {
   const { step } = props
+
+  const checked = step.children!.filter((x) => x.checked).length
+  const total = step.children!.length
+  const percentage = (checked / total) * 100
+
   return (
     <>
-      <Card hoverable css={{ mw: '330px' }}>
-        <Text h3>{step.title}</Text>
-        <Text>{step.descr}</Text>
+      <Card hoverable css={{ mw: '400px' }}>
+        <Text h3 css={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div>{step.title}</div>
+        </Text>
+        <Spacer y={3}></Spacer>
+        <Text css={{ textAlign: 'center' }}>
+          {checked}/{total}
+        </Text>
+        <Progress color="primary" value={percentage} />
       </Card>
-      {step.subSteps && (
-        <Grid.Container gap={2} justify="flex-start" css={{ marginTop: 2 }}>
-          {step.subSteps.map((subStep) => (
-            <Grid key={subStep.key}>
+      {step.children && (
+        <Grid.Container gap={2} justify="center" css={{ marginTop: 2 }}>
+          {step.children.map((subStep, i) => (
+            <Grid
+              key={subStep.key}
+              onClick={() => props.onStepChecked(i, !subStep.checked)}
+            >
               <Card hoverable css={{ mw: '320px' }}>
                 <Text h5>{subStep.title}</Text>
                 <Text>{subStep.descr}</Text>
+                <Checkbox
+                  isSelected={subStep.checked}
+                  onChange={() => props.onStepChecked(i, !subStep.checked)}
+                ></Checkbox>
               </Card>
             </Grid>
           ))}
